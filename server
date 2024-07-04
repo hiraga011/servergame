@@ -1,0 +1,295 @@
+#include<DxLib.h>
+#include"windows.h"
+#include <math.h>
+#include<WinSock2.h>
+
+#pragma comment(lib, "ws2_32.lib")
+
+static const float ROTATE_SPEED = DX_PI_F / 90;//回転スピード
+
+int WINAPI WinMain(HINSTANCE hI, HINSTANCE hP, LPSTR lpC, int nC)
+{
+
+	//modelsetするための変数
+	int stage;
+	int model1;
+
+	//アニメーションのための変数
+	int attachi_anim;
+	int anim_n;
+	int anim_w;
+	int anim_k;
+
+	int mcnt = 0 ; 
+	int rset = 0;
+
+
+	float anim_total;
+	float playtime = 0.000 ;
+
+	//アニメーション切り替えフラグ
+	int cuntf = 0 ;
+	int atkf = 0;
+
+
+
+	//key入力を受け付ける
+	int key ;										//key情報を格納する変数
+
+	VECTOR pos = VGet( 0.0f,0.0f,0.0f );
+	VECTOR pos1 = VGet(450.0f, 100.0f, 100.0f );
+	VECTOR cpos = VGet(450.0f, 1000.0f,-300.0f );
+	VECTOR ctgt = VGet(450.0f, 300.0f, 200.0f );
+
+
+	ChangeWindowMode(TRUE);
+
+	SetGraphMode(900, 600, 32);
+	if (DxLib_Init() == -1)
+	{
+		return -1;
+	}
+
+	SetDrawScreen(DX_SCREEN_BACK);
+
+	//ステージを読み込む
+	stage = MV1LoadModel("..\\3dserber\\stage.mv1");
+
+	//キャラモデルセット
+	model1 = MV1LoadModel("..\\3dserber\\幼虫ポーンmodel.mv1");
+	anim_n = MV1LoadModel("..\\3dserber\\standanim.mv1");
+	anim_w = MV1LoadModel("..\\3dserber\\work.mv1");
+	anim_k = MV1LoadModel("..\\3dserber\\attackanim.mv1");
+
+
+	attachi_anim = MV1AttachAnim(model1, 2, anim_n);
+	anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+	while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+	{
+		ClearDrawScreen();
+		DrawBox(0, 0, 900, 600, GetColor(255, 255, 255), true);
+
+		//アニメーション切り替えフラグ
+		//アニメーションの速度と時間
+		key = GetJoypadInputState(DX_INPUT_KEY_PAD1);	//key情報を関数に格納
+		//animfのフラグを操作(key入力で)
+
+		if (key & PAD_INPUT_1) {
+			atkf = 1;
+		}
+
+
+
+		if (atkf == 1) {
+			MV1DetachAnim(model1, attachi_anim);
+			attachi_anim = MV1AttachAnim(model1, 2, anim_k);
+			anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+			for (float i = 0; i < anim_total; i++) {
+				if (playtime > anim_total) {
+					playtime = 0.00;
+				}
+				playtime += 0.1;
+				MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+			}
+
+			atkf = 0;
+
+		}
+
+		if (key & PAD_INPUT_DOWN && key & PAD_INPUT_LEFT) {
+			cuntf = 0;
+			mcnt = 2;
+		}
+		if (key & PAD_INPUT_DOWN && key & PAD_INPUT_RIGHT) {
+			cuntf = 0;
+			mcnt = 2;
+		}
+		if (key & PAD_INPUT_UP && key & PAD_INPUT_LEFT) {
+			cuntf = 0;
+			mcnt = 2;
+		}
+		if (key & PAD_INPUT_UP && key & PAD_INPUT_RIGHT) {
+			cuntf = 0;
+			mcnt = 2;
+		}
+
+		if (key == 0) {
+			mcnt = 0;
+		}
+
+		if (key & PAD_INPUT_DOWN && mcnt == 0 ) {
+			cuntf = 1;
+			rset = 1;
+			MV1DetachAnim(model1,attachi_anim);
+			attachi_anim = MV1AttachAnim(model1, 2, anim_w);
+			anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+			if (playtime > anim_total) {
+				playtime = 0.00;
+			}
+			playtime += 0.03;
+			MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+
+			if( playtime > anim_total ){
+				playtime = 0.0;
+			}
+
+			pos1.z -= 5.0;
+			cpos.z -= 5.0;
+			ctgt.z -= 5.0;
+
+		}
+
+		if (key & PAD_INPUT_UP && mcnt == 0) {
+			cuntf = 1;
+			rset = 3;
+			MV1DetachAnim(model1, attachi_anim);
+			attachi_anim = MV1AttachAnim(model1, 2, anim_w);
+			anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+			if (playtime > anim_total) {
+				playtime = 0.00;
+			}
+			playtime += 0.03;
+			MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+
+			pos1.z += 5.0;
+			cpos.z += 5.0;
+			ctgt.z += 5.0;
+
+
+
+		}
+
+		if (key & PAD_INPUT_RIGHT && mcnt == 0) {
+			cuntf = 1;
+			rset = 2;
+			MV1DetachAnim(model1, attachi_anim);
+			attachi_anim = MV1AttachAnim(model1, 2, anim_w);
+			anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+			if (playtime > anim_total) {
+				playtime = 0.00;
+			}
+			playtime += 0.03;
+			MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+
+			pos1.x += 5.0;
+			cpos.x += 5.0;
+			ctgt.x += 5.0;
+
+		}
+
+		if (key & PAD_INPUT_LEFT && mcnt == 0) {
+			cuntf = 1;
+			rset = 0;
+			MV1DetachAnim(model1, attachi_anim);
+			attachi_anim = MV1AttachAnim(model1, 2, anim_w);
+			anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+
+			if (playtime > anim_total) {
+				playtime = 0.00;
+			}
+			playtime += 0.03;
+			MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+
+			pos1.x -= 5.0;
+			cpos.x -= 5.0;
+			ctgt.x -= 5.0;
+
+		}
+
+		//end
+
+		//animfフラグでアニメーション分岐
+		if (key == 0) {
+			cuntf = 0;
+			if (cuntf == 0) {
+				MV1DetachAnim(model1, attachi_anim);
+				attachi_anim = MV1AttachAnim(model1, 2, anim_n);
+				anim_total = MV1GetAttachAnimTotalTime(model1, attachi_anim);
+			}
+
+			if (playtime > anim_total) {
+				playtime = 0.00;
+			}
+			playtime += 0.03;
+			MV1SetAttachAnimTime(model1, attachi_anim, playtime);
+		}
+
+		//簡易的な壁ヒットチェック
+
+		//左ヒットチェック
+		if (pos.x >= pos1.x) {
+			pos1.x += 5.0;
+			cpos.x += 5.0;
+			ctgt.x += 5.0;
+		}
+		//右ヒットチェック
+		if (pos1.x >= 6000 ) {
+			pos1.x -= 5.0;
+			cpos.x -= 5.0;
+			ctgt.x -= 5.0;
+		}
+		//奥ヒットチェック
+		if ( pos1.z >= 1500.0 ) {
+			pos1.z -= 5.0;
+			cpos.z -= 5.0;
+			ctgt.z -= 5.0;
+		}
+		//正面ヒットチェック
+		if (pos1.z <= pos.z - 700) {
+			pos1.z += 5.0;
+			cpos.z += 5.0;
+			ctgt.z += 5.0;
+		}
+
+		//end
+
+		//視点の回転
+		if (key & PAD_INPUT_4) {
+			ctgt.x += cos(pos1.x / 180) / 2;
+			ctgt.x += cos(pos1.x / 180) / 2;
+		}
+		if (key & PAD_INPUT_6) {
+			ctgt.x -= cos(pos1.x / 180) / 2;
+			ctgt.x -= cos(pos1.x / 180) / 2;
+		}
+
+		if (key & PAD_INPUT_8) {
+			ctgt.z += cos(pos1.z / 180) / 2;
+			ctgt.z += cos(pos1.z / 180) / 2;
+		}
+		if (key & PAD_INPUT_5) {
+			ctgt.z -= cos(pos1.z / 180) / 2;
+			ctgt.z -= cos(pos1.z / 180) / 2;
+
+		}
+
+		//standanim end
+
+		SetCameraPositionAndTarget_UpVecY(cpos, ctgt );
+
+		//ステージのセット
+		MV1SetPosition( stage,pos );
+		MV1DrawModel(stage);
+
+		//モデル調整
+		MV1SetScale(model1,VGet( 0.1f,0.1f,0.1f )); 
+		MV1SetRotationXYZ( model1,VGet( 0.0f,80.1f * rset,0.0f ) );
+		MV1SetPosition(model1, pos1 );
+
+		//モデルをセット(表示させる)
+		MV1DrawModel(model1);
+
+
+		ScreenFlip();
+	}
+
+	DxLib_End();
+	return 0;
+}
+
+
